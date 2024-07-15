@@ -1,0 +1,19 @@
+@app.route('/api/query', methods=['POST'])
+def query_openai():
+    data = request.json
+    query = data.get('query')
+
+    if not query:
+        return jsonify({'error': 'No query provided'}), 400
+
+    try:
+        response = openai.Completion.create(
+            engine="text-davinci",  # Update to the correct model name
+            prompt=query,
+            max_tokens=150
+        )
+
+        answer = response.choices[0].text.strip()
+        return jsonify({'answer': answer})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

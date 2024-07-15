@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ Chatbot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        /* Global styles */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+        body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #e6e1f2;*/
+    color: #4a148c;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-size: cover; 
+    background-repeat: no-repeat;
+}
+
+
+        .container {
+            width: 80%;
+            max-width: 600px;
+            margin-top: auto; /* Push to bottom when there's extra space */
+            padding: 20px;
+           background: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        header {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2.5em;
+            color: #7b1fa2;
+            text-shadow: 2px 2px #b39ddb;
+        }
+
+        form {
+            background: #f9f7ff;
+            padding: 70px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #6a1b9a;
+        }
+
+        textarea, input[type="number"], button {
+            width: 100%;
+            
+            padding: 5px 10px;
+            border: 1px solid #7b1fa2;
+            border-radius: 10px;
+            box-sizing: border-box;
+            height: 50px ;
+            padding-bottom: 5px ;
+            background-color: #ece7ff; /* Light purple color */
+            transition: box-shadow 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        textarea:focus{
+            outline: none;
+            box-shadow: 0 0 10px rgba(123, 31, 162, 0.5);
+        }
+
+        button {
+            background-color: #8e24aa;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-family: 'Poppins', sans-serif;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #7b1fa2;
+            transform: translateY(-3px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .chat-container {
+            width: 100%;
+            max-height: 400px; /* Set max height for chat container */
+            overflow-y: auto; /* Enable vertical scrolling */
+            margin-top: 20px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px; /* Add spacing between messages */
+        }
+
+        .message-container {
+            display: flex;
+            justify-content: flex-end; /* Align user message to the right */
+        }
+
+        .user-message {
+            align-self: flex-end; /* Align user message content to the right */
+            background-color: #8e24aa; /* User message background color */
+            color: white; /* User message text color */
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 70%; /* Limit max-width of message */
+            word-wrap: break-word; /* Wrap long words */
+            text-align: right; /* Align text to right */
+        }
+
+        .bot-message {
+            align-self: flex-start; /* Align bot message to the left */
+            background-color: #e0e0e0; /* Bot message background color */
+            color: black; /* Bot message text color */
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 70%; /* Limit max-width of message */
+            word-wrap: break-word; /* Wrap long words */
+            text-align: left; /* Align text to left */
+        }
+
+        .question {
+            font-weight: bold;
+            color: #6a1b9a; /* Adjust question color if needed */
+        }
+
+        .answer {
+            margin-top: 5px;
+            color: #4a148c; /* Adjust answer color if needed */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>FAQ Chatbot</h1>
+        </header>
+        <div class="chat-container" id="chat-container">
+            <!-- Chat messages will be dynamically added here -->
+        </div>
+        <form id="faq-form">
+            <div class="form-group">
+                <label for="text">Enter your text:</label>
+                <textarea id="text" name="text" rows="4" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="count">Number of FAQs:</label>
+                <input type="number" id="count" name="count" value="3" min="1" required>
+            </div>
+            <button type="submit">Generate FAQs</button>
+        </form>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            function sendMessage(message, sender) {
+                const messageHtml = `
+                    <div class="message-container ${sender}-message">
+                        <div class="message">${message}</div>
+                    </div>`;
+                $('#chat-container').append(messageHtml);
+            }
+
+            function generateFaqs() {
+                const text = $('#text').val();
+                const count = $('#count').val();
+                
+                $.ajax({
+                    url: '/api/generate_faqs',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ text: text, count: count }),
+                    success: function(response) {
+                        response.forEach(faq => {
+                            sendMessage(`<strong class="question">Q:</strong> ${faq.q}`, 'bot');
+                            sendMessage(`<div class="answer">A: ${faq.a}</div>`, 'bot');
+                        });
+                    },
+                    error: function(error) {
+                        sendMessage(`Error generating FAQs`, 'bot');
+                    }
+                });
+            }
+
+            $('#faq-form').on('submit', function(event) {
+                event.preventDefault();
+                sendMessage($('#text').val(), 'user'); // Display user message in chat
+                generateFaqs(); // Generate FAQs
+                $('#text').val(''); // Clear textarea after submission
+            });
+
+            $('#text').on('keypress', function(event) {
+                if (event.which === 13 && !event.shiftKey) {
+                    event.preventDefault();
+                    $('#faq-form').submit();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
